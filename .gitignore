@@ -21,3 +21,6 @@ tmp/
 
 # Local helper documents
 help_docs/
+
+# Local browser manifest generated for manual testing
+manifest.json

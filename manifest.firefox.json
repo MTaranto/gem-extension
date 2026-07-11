@@ -1,0 +1,26 @@
+{
+  "manifest_version": 3,
+  "name": "Gem Bridge Extension",
+  "short_name": "Gem Bridge",
+  "version": "0.1.0",
+  "description": "Browser extension companion for Gem Bridge, enabling controlled local-first communication with the local daemon.",
+  "permissions": [
+    "nativeMessaging",
+    "storage"
+  ],
+  "background": {
+    "scripts": [
+      "background/service_worker.js"
+    ]
+  },
+  "action": {
+    "default_title": "Gem Bridge Extension",
+    "default_popup": "popup/index.html"
+  },
+  "browser_specific_settings": {
+    "gecko": {
+      "id": "gembridge@mtaranto.com",
+      "strict_min_version": "121.0"
+    }
+  }
+}
