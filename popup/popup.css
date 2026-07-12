@@ -4,7 +4,7 @@
 }
 
 body {
-  min-width: 320px;
+  min-width: 340px;
   margin: 0;
   background: #111827;
   color: #f9fafb;
@@ -42,10 +42,23 @@ h2 {
   line-height: 1.4;
 }
 
+.card p + p {
+  margin-top: 6px;
+}
+
 .success {
   color: #86efac;
 }
 
+.warning {
+  color: #fde68a;
+}
+
 .error {
   color: #fca5a5;
+}
+
+.muted {
+  color: #9ca3af;
+  font-size: 0.85rem;
 }
