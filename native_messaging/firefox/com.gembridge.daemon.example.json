@@ -1,0 +1,9 @@
+{
+  "name": "com.gembridge.daemon",
+  "description": "Gem Bridge native messaging host",
+  "path": "/absolute/path/to/gem-bridge-native-host",
+  "type": "stdio",
+  "allowed_extensions": [
+    "gembridge@mtaranto.com"
+  ]
+}
