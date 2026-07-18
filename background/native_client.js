@@ -70,7 +70,25 @@ async function pingNativeHost() {
   }
 }
 
+async function readFile(path) {
+  if (typeof path !== "string" || path.trim() === "") {
+    throw new Error("A relative file path is required.");
+  }
+
+  const response = await sendNativeMessage({
+    type: "readFile",
+    path: path.trim()
+  });
+
+  if (!response || typeof response.success !== "boolean") {
+    throw new Error("Native host returned an unexpected response.");
+  }
+
+  return response;
+}
+
 globalThis.GemNativeClient = {
   hostName: GEM_NATIVE_HOST_NAME,
-  ping: pingNativeHost
+  ping: pingNativeHost,
+  readFile
 };

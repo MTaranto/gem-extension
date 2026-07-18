@@ -23,8 +23,37 @@
       </section>
 
       <section class="card">
+        <h2>Local file test</h2>
+        <p class="muted">
+          Read a fixed file from the authorized Gem Bridge workspace.
+        </p>
+
+        <div class="actions">
+          <button type="button" data-file-path="secret.txt">
+            Read secret.txt
+          </button>
+
+          <button type="button" data-file-path="secret.html">
+            Read secret.html
+          </button>
+        </div>
+
+        <p id="file-status" class="muted" aria-live="polite">
+          Select a file to test local reading.
+        </p>
+
+        <div id="file-result" class="file-result" hidden>
+          <p id="file-meta" class="muted"></p>
+          <pre id="file-content"></pre>
+        </div>
+      </section>
+
+      <section class="card">
         <h2>Current milestone</h2>
-        <p>Validate browser extension manifest, popup, background messaging, and native client status.</p>
+        <p>
+          Validate local file reading through the browser extension and native
+          host.
+        </p>
       </section>
     </main>
 

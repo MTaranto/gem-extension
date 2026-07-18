@@ -42,5 +42,20 @@ runtimeApi.onMessage.addListener((message, _sender, sendResponse) => {
     return true;
   }
 
+  if (message.type === "gemExtension.readFile") {
+    globalThis.GemNativeClient.readFile(message.path)
+      .then((response) => {
+        sendResponse(response);
+      })
+      .catch((error) => {
+        sendResponse({
+          success: false,
+          error: error instanceof Error ? error.message : String(error)
+        });
+      });
+
+    return true;
+  }
+
   return false;
 });

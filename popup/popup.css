@@ -3,8 +3,12 @@
   font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
 }
 
+* {
+  box-sizing: border-box;
+}
+
 body {
-  min-width: 340px;
+  min-width: 360px;
   margin: 0;
   background: #111827;
   color: #f9fafb;
@@ -46,6 +50,38 @@ h2 {
   margin-top: 6px;
 }
 
+.actions {
+  display: flex;
+  gap: 8px;
+  margin: 12px 0;
+}
+
+button {
+  flex: 1;
+  padding: 8px 10px;
+  border: 1px solid #4b5563;
+  border-radius: 8px;
+  background: #374151;
+  color: #f9fafb;
+  font: inherit;
+  font-size: 0.85rem;
+  cursor: pointer;
+}
+
+button:hover:not(:disabled) {
+  background: #4b5563;
+}
+
+button:focus-visible {
+  outline: 2px solid #93c5fd;
+  outline-offset: 2px;
+}
+
+button:disabled {
+  cursor: wait;
+  opacity: 0.55;
+}
+
 .success {
   color: #86efac;
 }
@@ -61,4 +97,24 @@ h2 {
 .muted {
   color: #9ca3af;
   font-size: 0.85rem;
+}
+
+.file-result {
+  margin-top: 10px;
+}
+
+.file-result pre {
+  max-height: 220px;
+  margin: 8px 0 0;
+  padding: 10px;
+  overflow: auto;
+  border: 1px solid #374151;
+  border-radius: 8px;
+  background: #111827;
+  color: #e5e7eb;
+  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+  font-size: 0.8rem;
+  line-height: 1.45;
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
 }
