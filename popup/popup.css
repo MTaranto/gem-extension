@@ -8,7 +8,7 @@
 }
 
 body {
-  min-width: 360px;
+  min-width: 380px;
   margin: 0;
   background: #111827;
   color: #f9fafb;
@@ -50,15 +50,10 @@ h2 {
   margin-top: 6px;
 }
 
-.actions {
-  display: flex;
-  gap: 8px;
-  margin: 12px 0;
-}
-
 button {
-  flex: 1;
-  padding: 8px 10px;
+  width: 100%;
+  margin-top: 12px;
+  padding: 9px 12px;
   border: 1px solid #4b5563;
   border-radius: 8px;
   background: #374151;
@@ -99,22 +94,38 @@ button:disabled {
   font-size: 0.85rem;
 }
 
-.file-result {
-  margin-top: 10px;
+.snapshot-result {
+  margin-top: 12px;
+  padding-top: 4px;
+  border-top: 1px solid #374151;
 }
 
-.file-result pre {
-  max-height: 220px;
-  margin: 8px 0 0;
-  padding: 10px;
-  overflow: auto;
-  border: 1px solid #374151;
-  border-radius: 8px;
-  background: #111827;
-  color: #e5e7eb;
-  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+.snapshot-result dl {
+  margin: 0;
+}
+
+.snapshot-row {
+  display: grid;
+  grid-template-columns: minmax(110px, 1fr) minmax(0, 1.4fr);
+  gap: 12px;
+  padding: 7px 0;
+  border-bottom: 1px solid #374151;
+}
+
+.snapshot-row:last-child {
+  border-bottom: 0;
+}
+
+.snapshot-row dt {
+  color: #9ca3af;
   font-size: 0.8rem;
-  line-height: 1.45;
-  white-space: pre-wrap;
+}
+
+.snapshot-row dd {
+  min-width: 0;
+  margin: 0;
+  color: #e5e7eb;
+  font-size: 0.8rem;
+  text-align: right;
   overflow-wrap: anywhere;
 }

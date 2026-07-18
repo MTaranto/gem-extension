@@ -87,8 +87,29 @@ async function readFile(path) {
   return response;
 }
 
+async function projectSnapshot() {
+  const response = await sendNativeMessage({
+    type: "projectSnapshot"
+  });
+
+  if (!response || typeof response.success !== "boolean") {
+    throw new Error("Native host returned an unexpected response.");
+  }
+
+  if (response.success !== true) {
+    throw new Error(response.error ?? "Project snapshot creation failed.");
+  }
+
+  if (response.type !== "projectSnapshot" || !response.data) {
+    throw new Error("Native host returned an invalid project snapshot.");
+  }
+
+  return response;
+}
+
 globalThis.GemNativeClient = {
   hostName: GEM_NATIVE_HOST_NAME,
   ping: pingNativeHost,
-  readFile
+  readFile,
+  projectSnapshot
 };

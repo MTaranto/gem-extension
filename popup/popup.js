@@ -2,11 +2,24 @@ const backgroundStatusElement = document.getElementById("background-status");
 const nativeStatusElement = document.getElementById("native-status");
 const nativeHostElement = document.getElementById("native-host");
 const nativeMessageElement = document.getElementById("native-message");
-const fileStatusElement = document.getElementById("file-status");
-const fileResultElement = document.getElementById("file-result");
-const fileMetaElement = document.getElementById("file-meta");
-const fileContentElement = document.getElementById("file-content");
-const fileButtons = document.querySelectorAll("[data-file-path]");
+
+const snapshotButton = document.getElementById("snapshot-button");
+const snapshotStatusElement = document.getElementById("snapshot-status");
+const snapshotResultElement = document.getElementById("snapshot-result");
+const snapshotWorkspaceElement = document.getElementById("snapshot-workspace");
+const snapshotBranchElement = document.getElementById("snapshot-branch");
+const snapshotGitStatusElement = document.getElementById(
+  "snapshot-git-status"
+);
+const snapshotGitDiffElement = document.getElementById("snapshot-git-diff");
+const snapshotFilesElement = document.getElementById("snapshot-files");
+const snapshotContentSizeElement = document.getElementById(
+  "snapshot-content-size"
+);
+const snapshotOmittedElement = document.getElementById("snapshot-omitted");
+const snapshotCompletenessElement = document.getElementById(
+  "snapshot-completeness"
+);
 
 function sendRuntimeMessage(message) {
   if (globalThis.browser?.runtime?.sendMessage) {
@@ -27,76 +40,126 @@ function sendRuntimeMessage(message) {
   });
 }
 
-function setFileButtonsDisabled(disabled) {
-  for (const button of fileButtons) {
-    button.disabled = disabled;
+function formatBytes(bytes) {
+  if (!Number.isFinite(bytes) || bytes < 0) {
+    return "unknown";
   }
+
+  if (bytes < 1024) {
+    return `${bytes} B`;
+  }
+
+  if (bytes < 1024 * 1024) {
+    return `${(bytes / 1024).toFixed(1)} KiB`;
+  }
+
+  return `${(bytes / (1024 * 1024)).toFixed(1)} MiB`;
 }
 
-function showFileError(message) {
-  fileStatusElement.textContent = message;
-  fileStatusElement.className = "error";
-  fileResultElement.hidden = true;
+function showSnapshotError(message) {
+  snapshotStatusElement.textContent = message;
+  snapshotStatusElement.className = "error";
+  snapshotResultElement.hidden = true;
 }
 
-function showFileResponse(response) {
-  if (!response || response.success !== true) {
-    showFileError(response?.error ?? "File reading failed.");
-    return;
-  }
-
-  if (response.type !== "fileContent" || !response.data) {
-    showFileError("Native host returned an unexpected file response.");
-    return;
-  }
-
-  const { path, content, size } = response.data;
-
+function showProjectSnapshot(snapshot) {
   if (
-    typeof path !== "string" ||
-    typeof content !== "string" ||
-    typeof size !== "number"
+    !snapshot ||
+    typeof snapshot.workspace !== "string" ||
+    typeof snapshot.branch !== "string" ||
+    !Array.isArray(snapshot.gitStatus) ||
+    typeof snapshot.gitDiff !== "string" ||
+    !Array.isArray(snapshot.files) ||
+    !Array.isArray(snapshot.omitted) ||
+    typeof snapshot.truncated !== "boolean"
   ) {
-    showFileError("Native host returned invalid file data.");
+    showSnapshotError("Native host returned invalid snapshot data.");
     return;
   }
 
-  fileStatusElement.textContent = "File read successfully.";
-  fileStatusElement.className = "success";
+  const contentBytes = snapshot.files.reduce((total, file) => {
+    if (!file || typeof file.size !== "number") {
+      return total;
+    }
 
-  fileMetaElement.textContent = `${path} — ${size} bytes`;
-  fileContentElement.textContent = content;
-  fileResultElement.hidden = false;
+    return total + file.size;
+  }, 0);
+
+  const gitDiffBytes = new TextEncoder().encode(snapshot.gitDiff).length;
+
+  snapshotWorkspaceElement.textContent = snapshot.workspace;
+  snapshotBranchElement.textContent =
+    snapshot.branch || "detached or unavailable";
+
+  snapshotGitStatusElement.textContent =
+    snapshot.gitStatus.length === 0
+      ? "clean"
+      : `${snapshot.gitStatus.length} entries`;
+
+  snapshotGitDiffElement.textContent =
+    gitDiffBytes === 0
+      ? "no changes"
+      : formatBytes(gitDiffBytes);
+
+  snapshotFilesElement.textContent = String(snapshot.files.length);
+  snapshotContentSizeElement.textContent = formatBytes(contentBytes);
+  snapshotOmittedElement.textContent = String(snapshot.omitted.length);
+
+  snapshotCompletenessElement.textContent = snapshot.truncated
+    ? "truncated by safety limits"
+    : "complete";
+
+  snapshotCompletenessElement.className = snapshot.truncated
+    ? "warning"
+    : "success";
+
+  snapshotStatusElement.textContent = "Project snapshot loaded successfully.";
+  snapshotStatusElement.className = "success";
+  snapshotResultElement.hidden = false;
 }
 
-async function readLocalFile(path) {
-  setFileButtonsDisabled(true);
-
-  fileStatusElement.textContent = `Reading ${path}...`;
-  fileStatusElement.className = "warning";
-  fileResultElement.hidden = true;
+async function loadProjectSnapshot() {
+  snapshotButton.disabled = true;
+  snapshotStatusElement.textContent = "Building project snapshot...";
+  snapshotStatusElement.className = "warning";
+  snapshotResultElement.hidden = true;
 
   try {
     const response = await sendRuntimeMessage({
-      type: "gemExtension.readFile",
-      path
+      type: "gemExtension.projectSnapshot"
     });
 
-    showFileResponse(response);
+    if (!response || response.success !== true) {
+      showSnapshotError(
+        response?.error ?? "Project snapshot creation failed."
+      );
+      return;
+    }
+
+    if (response.type !== "projectSnapshot" || !response.data) {
+      showSnapshotError(
+        "Native host returned an unexpected project snapshot response."
+      );
+      return;
+    }
+
+    showProjectSnapshot(response.data);
   } catch (error) {
-    showFileError(
-      `Unable to read ${path}: ${
+    showSnapshotError(
+      `Project snapshot unavailable: ${
         error instanceof Error ? error.message : String(error)
       }`
     );
   } finally {
-    setFileButtonsDisabled(false);
+    snapshotButton.disabled = false;
   }
 }
 
 async function checkBackgroundStatus() {
   try {
-    const response = await sendRuntimeMessage({ type: "gemExtension.ping" });
+    const response = await sendRuntimeMessage({
+      type: "gemExtension.ping"
+    });
 
     if (!response || !response.success) {
       backgroundStatusElement.textContent =
@@ -142,11 +205,7 @@ async function checkNativeStatus() {
   }
 }
 
-for (const button of fileButtons) {
-  button.addEventListener("click", () => {
-    readLocalFile(button.dataset.filePath);
-  });
-}
+snapshotButton.addEventListener("click", loadProjectSnapshot);
 
 checkBackgroundStatus();
 checkNativeStatus();

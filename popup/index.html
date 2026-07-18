@@ -23,35 +23,70 @@
       </section>
 
       <section class="card">
-        <h2>Local file test</h2>
+        <h2>Project snapshot</h2>
+
         <p class="muted">
-          Read a fixed file from the authorized Gem Bridge workspace.
+          Build a bounded and security-filtered view of the authorized
+          workspace.
         </p>
 
-        <div class="actions">
-          <button type="button" data-file-path="secret.txt">
-            Read secret.txt
-          </button>
+        <button id="snapshot-button" type="button">
+          Load project snapshot
+        </button>
 
-          <button type="button" data-file-path="secret.html">
-            Read secret.html
-          </button>
-        </div>
-
-        <p id="file-status" class="muted" aria-live="polite">
-          Select a file to test local reading.
+        <p id="snapshot-status" class="muted" aria-live="polite">
+          Snapshot not loaded.
         </p>
 
-        <div id="file-result" class="file-result" hidden>
-          <p id="file-meta" class="muted"></p>
-          <pre id="file-content"></pre>
+        <div id="snapshot-result" class="snapshot-result" hidden>
+          <dl>
+            <div class="snapshot-row">
+              <dt>Workspace</dt>
+              <dd id="snapshot-workspace"></dd>
+            </div>
+
+            <div class="snapshot-row">
+              <dt>Branch</dt>
+              <dd id="snapshot-branch"></dd>
+            </div>
+
+            <div class="snapshot-row">
+              <dt>Git status</dt>
+              <dd id="snapshot-git-status"></dd>
+            </div>
+
+            <div class="snapshot-row">
+              <dt>Git diff</dt>
+              <dd id="snapshot-git-diff"></dd>
+            </div>
+
+            <div class="snapshot-row">
+              <dt>Included files</dt>
+              <dd id="snapshot-files"></dd>
+            </div>
+
+            <div class="snapshot-row">
+              <dt>Content size</dt>
+              <dd id="snapshot-content-size"></dd>
+            </div>
+
+            <div class="snapshot-row">
+              <dt>Omitted entries</dt>
+              <dd id="snapshot-omitted"></dd>
+            </div>
+
+            <div class="snapshot-row">
+              <dt>Result</dt>
+              <dd id="snapshot-completeness"></dd>
+            </div>
+          </dl>
         </div>
       </section>
 
       <section class="card">
         <h2>Current milestone</h2>
         <p>
-          Validate local file reading through the browser extension and native
+          Validate a safe project snapshot through the extension and native
           host.
         </p>
       </section>
