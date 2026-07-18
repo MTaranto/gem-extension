@@ -25,12 +25,21 @@ runtimeApi.onMessage.addListener((message, _sender, sendResponse) => {
   }
 
   if (message.type === "gemExtension.nativeStatus") {
-    sendResponse({
-      success: true,
-      data: globalThis.GemNativeClient.getStatus()
-    });
+    globalThis.GemNativeClient.ping()
+      .then((status) => {
+        sendResponse({
+          success: true,
+          data: status
+        });
+      })
+      .catch((error) => {
+        sendResponse({
+          success: false,
+          error: error instanceof Error ? error.message : String(error)
+        });
+      });
 
-    return false;
+    return true;
   }
 
   return false;
