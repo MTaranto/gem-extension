@@ -23,8 +23,80 @@
       </section>
 
       <section class="card">
+        <h2>Project snapshot</h2>
+
+        <p class="muted">
+          Build a bounded and security-filtered view of the authorized
+          workspace.
+        </p>
+
+        <button id="snapshot-button" type="button">
+          Load project snapshot
+        </button>
+
+        <p id="snapshot-status" class="muted" aria-live="polite">
+          Snapshot not loaded.
+        </p>
+
+        <div id="snapshot-result" class="snapshot-result" hidden>
+          <dl>
+            <div class="snapshot-row">
+              <dt>Workspace</dt>
+              <dd id="snapshot-workspace"></dd>
+            </div>
+
+            <div class="snapshot-row">
+              <dt>Branch</dt>
+              <dd id="snapshot-branch"></dd>
+            </div>
+
+            <div class="snapshot-row">
+              <dt>Git status</dt>
+              <dd id="snapshot-git-status"></dd>
+            </div>
+
+            <div class="snapshot-row">
+              <dt>Git diff</dt>
+              <dd id="snapshot-git-diff"></dd>
+            </div>
+
+            <div class="snapshot-row">
+              <dt>Included files</dt>
+              <dd id="snapshot-files"></dd>
+            </div>
+
+            <div class="snapshot-row">
+              <dt>Content size</dt>
+              <dd id="snapshot-content-size"></dd>
+            </div>
+
+            <div class="snapshot-row">
+              <dt>Omitted entries</dt>
+              <dd id="snapshot-omitted"></dd>
+            </div>
+
+            <div class="snapshot-row">
+              <dt>Result</dt>
+              <dd id="snapshot-completeness"></dd>
+            </div>
+          </dl>
+
+          <button id="attach-context-button" type="button" disabled>
+            Attach context to ChatGPT
+          </button>
+
+          <p id="attachment-status" class="muted" aria-live="polite">
+            Write your request in ChatGPT before attaching the context.
+          </p>
+        </div>
+      </section>
+
+      <section class="card">
         <h2>Current milestone</h2>
-        <p>Validate browser extension manifest, popup, background messaging, and native client status.</p>
+        <p>
+          Prepare visible local project context in the current ChatGPT
+          conversation without submitting automatically.
+        </p>
       </section>
     </main>
 

@@ -1,28 +1,115 @@
 const GEM_NATIVE_HOST_NAME = "com.gembridge.daemon";
 
-// GemNativeClient centralizes future Native Messaging communication.
-//
-// This first version does not connect to the native host yet. It only exposes
-// a status object so the popup and background can evolve around a stable module
-// boundary before real host communication is implemented.
-function getNativeClientStatus() {
-  const runtimeApi = globalThis.chrome?.runtime ?? globalThis.browser?.runtime;
-  const nativeMessagingAvailable = Boolean(
-    runtimeApi?.connectNative || runtimeApi?.sendNativeMessage
-  );
+// GemNativeClient centralizes Native Messaging communication with the local host.
+function getRuntimeApi() {
+  return globalThis.browser?.runtime ?? globalThis.chrome?.runtime;
+}
 
-  return {
-    hostName: GEM_NATIVE_HOST_NAME,
-    status: "not_configured",
-    connected: false,
-    nativeMessagingAvailable,
-    message: nativeMessagingAvailable
-      ? "Native Messaging API is available. Native host connection is not implemented yet."
-      : "Native Messaging API is not available in this context."
-  };
+function sendNativeMessage(message) {
+  const runtimeApi = getRuntimeApi();
+
+  if (!runtimeApi?.sendNativeMessage) {
+    return Promise.reject(
+      new Error("Native Messaging API is not available in this context.")
+    );
+  }
+
+  if (globalThis.browser?.runtime?.sendNativeMessage) {
+    return globalThis.browser.runtime.sendNativeMessage(
+      GEM_NATIVE_HOST_NAME,
+      message
+    );
+  }
+
+  return new Promise((resolve, reject) => {
+    runtimeApi.sendNativeMessage(
+      GEM_NATIVE_HOST_NAME,
+      message,
+      (response) => {
+        const lastError = globalThis.chrome.runtime.lastError;
+
+        if (lastError) {
+          reject(new Error(lastError.message));
+          return;
+        }
+
+        resolve(response);
+      }
+    );
+  });
+}
+
+async function pingNativeHost() {
+  try {
+    const response = await sendNativeMessage({ type: "ping" });
+
+    if (!response || response.success !== true || response.type !== "pong") {
+      return {
+        hostName: GEM_NATIVE_HOST_NAME,
+        status: "unexpected_response",
+        connected: false,
+        message: "Native host returned an unexpected response.",
+        response
+      };
+    }
+
+    return {
+      hostName: GEM_NATIVE_HOST_NAME,
+      status: "connected",
+      connected: true,
+      message: "Native host responded successfully.",
+      response
+    };
+  } catch (error) {
+    return {
+      hostName: GEM_NATIVE_HOST_NAME,
+      status: "connection_failed",
+      connected: false,
+      message: error instanceof Error ? error.message : String(error)
+    };
+  }
+}
+
+async function readFile(path) {
+  if (typeof path !== "string" || path.trim() === "") {
+    throw new Error("A relative file path is required.");
+  }
+
+  const response = await sendNativeMessage({
+    type: "readFile",
+    path: path.trim()
+  });
+
+  if (!response || typeof response.success !== "boolean") {
+    throw new Error("Native host returned an unexpected response.");
+  }
+
+  return response;
+}
+
+async function projectSnapshot() {
+  const response = await sendNativeMessage({
+    type: "projectSnapshot"
+  });
+
+  if (!response || typeof response.success !== "boolean") {
+    throw new Error("Native host returned an unexpected response.");
+  }
+
+  if (response.success !== true) {
+    throw new Error(response.error ?? "Project snapshot creation failed.");
+  }
+
+  if (response.type !== "projectSnapshot" || !response.data) {
+    throw new Error("Native host returned an invalid project snapshot.");
+  }
+
+  return response;
 }
 
 globalThis.GemNativeClient = {
   hostName: GEM_NATIVE_HOST_NAME,
-  getStatus: getNativeClientStatus
+  ping: pingNativeHost,
+  readFile,
+  projectSnapshot
 };

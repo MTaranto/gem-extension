@@ -3,8 +3,12 @@
   font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
 }
 
+* {
+  box-sizing: border-box;
+}
+
 body {
-  min-width: 340px;
+  min-width: 380px;
   margin: 0;
   background: #111827;
   color: #f9fafb;
@@ -46,6 +50,33 @@ h2 {
   margin-top: 6px;
 }
 
+button {
+  width: 100%;
+  margin-top: 12px;
+  padding: 9px 12px;
+  border: 1px solid #4b5563;
+  border-radius: 8px;
+  background: #374151;
+  color: #f9fafb;
+  font: inherit;
+  font-size: 0.85rem;
+  cursor: pointer;
+}
+
+button:hover:not(:disabled) {
+  background: #4b5563;
+}
+
+button:focus-visible {
+  outline: 2px solid #93c5fd;
+  outline-offset: 2px;
+}
+
+button:disabled {
+  cursor: wait;
+  opacity: 0.55;
+}
+
 .success {
   color: #86efac;
 }
@@ -61,4 +92,40 @@ h2 {
 .muted {
   color: #9ca3af;
   font-size: 0.85rem;
+}
+
+.snapshot-result {
+  margin-top: 12px;
+  padding-top: 4px;
+  border-top: 1px solid #374151;
+}
+
+.snapshot-result dl {
+  margin: 0;
+}
+
+.snapshot-row {
+  display: grid;
+  grid-template-columns: minmax(110px, 1fr) minmax(0, 1.4fr);
+  gap: 12px;
+  padding: 7px 0;
+  border-bottom: 1px solid #374151;
+}
+
+.snapshot-row:last-child {
+  border-bottom: 0;
+}
+
+.snapshot-row dt {
+  color: #9ca3af;
+  font-size: 0.8rem;
+}
+
+.snapshot-row dd {
+  min-width: 0;
+  margin: 0;
+  color: #e5e7eb;
+  font-size: 0.8rem;
+  text-align: right;
+  overflow-wrap: anywhere;
 }
