@@ -21,6 +21,15 @@ const snapshotCompletenessElement = document.getElementById(
   "snapshot-completeness"
 );
 
+const attachContextButton = document.getElementById(
+  "attach-context-button"
+);
+const attachmentStatusElement = document.getElementById(
+  "attachment-status"
+);
+
+let currentSnapshot = null;
+
 function sendRuntimeMessage(message) {
   if (globalThis.browser?.runtime?.sendMessage) {
     return globalThis.browser.runtime.sendMessage(message);
@@ -40,6 +49,25 @@ function sendRuntimeMessage(message) {
   });
 }
 
+function withTimeout(promise, timeoutMilliseconds, timeoutMessage) {
+  return new Promise((resolve, reject) => {
+    const timeoutId = setTimeout(() => {
+      reject(new Error(timeoutMessage));
+    }, timeoutMilliseconds);
+
+    Promise.resolve(promise).then(
+      (value) => {
+        clearTimeout(timeoutId);
+        resolve(value);
+      },
+      (error) => {
+        clearTimeout(timeoutId);
+        reject(error);
+      }
+    );
+  });
+}
+
 function formatBytes(bytes) {
   if (!Number.isFinite(bytes) || bytes < 0) {
     return "unknown";
@@ -56,34 +84,60 @@ function formatBytes(bytes) {
   return `${(bytes / (1024 * 1024)).toFixed(1)} MiB`;
 }
 
+function isValidSnapshotFile(file) {
+  return (
+    file &&
+    typeof file.path === "string" &&
+    typeof file.size === "number" &&
+    typeof file.content === "string"
+  );
+}
+
+function isValidSnapshotOmission(omission) {
+  return (
+    omission &&
+    typeof omission.path === "string" &&
+    typeof omission.reason === "string"
+  );
+}
+
+function isValidProjectSnapshot(snapshot) {
+  return (
+    snapshot &&
+    typeof snapshot.workspace === "string" &&
+    typeof snapshot.branch === "string" &&
+    Array.isArray(snapshot.gitStatus) &&
+    snapshot.gitStatus.every((entry) => typeof entry === "string") &&
+    typeof snapshot.gitDiff === "string" &&
+    Array.isArray(snapshot.files) &&
+    snapshot.files.every(isValidSnapshotFile) &&
+    Array.isArray(snapshot.omitted) &&
+    snapshot.omitted.every(isValidSnapshotOmission) &&
+    typeof snapshot.truncated === "boolean"
+  );
+}
+
 function showSnapshotError(message) {
+  currentSnapshot = null;
+  attachContextButton.disabled = true;
+
   snapshotStatusElement.textContent = message;
   snapshotStatusElement.className = "error";
   snapshotResultElement.hidden = true;
 }
 
 function showProjectSnapshot(snapshot) {
-  if (
-    !snapshot ||
-    typeof snapshot.workspace !== "string" ||
-    typeof snapshot.branch !== "string" ||
-    !Array.isArray(snapshot.gitStatus) ||
-    typeof snapshot.gitDiff !== "string" ||
-    !Array.isArray(snapshot.files) ||
-    !Array.isArray(snapshot.omitted) ||
-    typeof snapshot.truncated !== "boolean"
-  ) {
+  if (!isValidProjectSnapshot(snapshot)) {
     showSnapshotError("Native host returned invalid snapshot data.");
     return;
   }
 
-  const contentBytes = snapshot.files.reduce((total, file) => {
-    if (!file || typeof file.size !== "number") {
-      return total;
-    }
+  currentSnapshot = snapshot;
 
-    return total + file.size;
-  }, 0);
+  const contentBytes = snapshot.files.reduce(
+    (total, file) => total + file.size,
+    0
+  );
 
   const gitDiffBytes = new TextEncoder().encode(snapshot.gitDiff).length;
 
@@ -115,11 +169,71 @@ function showProjectSnapshot(snapshot) {
 
   snapshotStatusElement.textContent = "Project snapshot loaded successfully.";
   snapshotStatusElement.className = "success";
+
+  attachmentStatusElement.textContent =
+    "Write your request in ChatGPT, then attach this context.";
+  attachmentStatusElement.className = "muted";
+
+  attachContextButton.disabled = false;
   snapshotResultElement.hidden = false;
 }
 
+function buildProjectContext(snapshot) {
+  const gitStatus =
+    snapshot.gitStatus.length === 0
+      ? "(clean working tree)"
+      : snapshot.gitStatus.join("\n");
+
+  const gitDiff =
+    snapshot.gitDiff.trim() === ""
+      ? "(no tracked changes)"
+      : snapshot.gitDiff;
+
+  const files = snapshot.files.map((file) => {
+    return [
+      `===== FILE: ${file.path} =====`,
+      `Size: ${file.size} bytes`,
+      "",
+      file.content,
+      `===== END FILE: ${file.path} =====`
+    ].join("\n");
+  });
+
+  const omissions =
+    snapshot.omitted.length === 0
+      ? "(none)"
+      : snapshot.omitted
+          .map(
+            (omission) =>
+              `- ${omission.path}: ${omission.reason}`
+          )
+          .join("\n");
+
+  return [
+    "Gem Bridge local project snapshot",
+    `Workspace: ${snapshot.workspace}`,
+    `Branch: ${snapshot.branch || "(detached or unavailable)"}`,
+    `Truncated: ${snapshot.truncated}`,
+    "",
+    "Git status:",
+    gitStatus,
+    "",
+    "Git diff:",
+    gitDiff,
+    "",
+    "Included files:",
+    files.length === 0 ? "(none)" : files.join("\n\n"),
+    "",
+    "Omitted entries:",
+    omissions
+  ].join("\n");
+}
+
 async function loadProjectSnapshot() {
+  currentSnapshot = null;
   snapshotButton.disabled = true;
+  attachContextButton.disabled = true;
+
   snapshotStatusElement.textContent = "Building project snapshot...";
   snapshotStatusElement.className = "warning";
   snapshotResultElement.hidden = true;
@@ -152,6 +266,54 @@ async function loadProjectSnapshot() {
     );
   } finally {
     snapshotButton.disabled = false;
+  }
+}
+
+async function attachProjectContext() {
+  if (!currentSnapshot) {
+    attachmentStatusElement.textContent =
+      "Load a project snapshot before attaching context.";
+    attachmentStatusElement.className = "error";
+    return;
+  }
+
+  snapshotButton.disabled = true;
+  attachContextButton.disabled = true;
+
+  attachmentStatusElement.textContent =
+    "Preparing project context in ChatGPT...";
+  attachmentStatusElement.className = "warning";
+
+  try {
+    const contextText = buildProjectContext(currentSnapshot);
+
+    const response = await withTimeout(
+      sendRuntimeMessage({
+        type: "gemExtension.attachProjectContext",
+        contextText
+      }),
+      20_000,
+      "Timed out after 20 seconds while attaching project context in ChatGPT. Review the composer before trying again."
+    );
+
+    if (!response || response.success !== true) {
+      throw new Error(
+        response?.error ?? "Project context could not be attached."
+      );
+    }
+
+    attachmentStatusElement.textContent =
+      "Project context prepared. Review the message before sending.";
+    attachmentStatusElement.className = "success";
+  } catch (error) {
+    attachmentStatusElement.textContent =
+      `Unable to attach context: ${
+        error instanceof Error ? error.message : String(error)
+      }`;
+    attachmentStatusElement.className = "error";
+  } finally {
+    snapshotButton.disabled = false;
+    attachContextButton.disabled = false;
   }
 }
 
@@ -206,6 +368,7 @@ async function checkNativeStatus() {
 }
 
 snapshotButton.addEventListener("click", loadProjectSnapshot);
+attachContextButton.addEventListener("click", attachProjectContext);
 
 checkBackgroundStatus();
 checkNativeStatus();

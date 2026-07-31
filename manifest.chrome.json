@@ -14,5 +14,17 @@
   "action": {
     "default_title": "Gem Bridge Extension",
     "default_popup": "popup/index.html"
-  }
+  },
+  "content_scripts": [
+    {
+      "matches": [
+        "https://chatgpt.com/*",
+        "https://chat.openai.com/*"
+      ],
+      "js": [
+        "content/providers/chatgpt_adapter.js"
+      ],
+      "run_at": "document_idle"
+    }
+  ]
 }
