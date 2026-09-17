@@ -2,6 +2,8 @@
 
 [Leia em português brasileiro](./README.pt-br.md)
 
+> **Project status:** This experimental project is currently paused and is being kept public as a study record and technical reference.
+
 Gem Bridge Extension is the browser extension companion for Gem Bridge.
 
 Its goal is to provide a controlled bridge between browser-based AI assistants and the local Gem Bridge daemon through Native Messaging.
@@ -91,4 +93,4 @@ The local daemon remains responsible for workspace validation and tool execution
 
 ## License
 
-This project is currently under active development. A license will be added before the first public release.
+This project does not currently include a license.
